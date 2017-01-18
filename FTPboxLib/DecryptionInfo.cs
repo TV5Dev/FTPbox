@@ -15,8 +15,8 @@ namespace FTPboxLib
 {
     public static partial class Common
     {
-        public static string DecryptionPassword = "removed";
+        public static string DecryptionPassword = "osj21svGzo8wcU6t05Z3M9nRPQFfStToE3yE0vmASoijdasd9asd7AIPOQtNT5zWIfvhGaLJZ19m";
 
-        public static string DecryptionSalt = "removed";
+        public static string DecryptionSalt = "ASOIDoIajsda*DUaksdOASD8aSDASDAS&DASDKjoisadjasdAS&DYAKsdoaSD&SD*&A^SDajsdoIASD&";
     }
 }

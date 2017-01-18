@@ -17,7 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.FtpClient;
+using FluentFTP;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
@@ -430,14 +430,31 @@ namespace FTPboxLib
                 // download to a temp file...
                 if (FTP)
                 {
-                    using (Stream file = File.OpenWrite(temp), rem = _ftpc.OpenRead(i.CommonPath))
+                    const int bufferSize = 8192;
+                    var canResume = _ftpc.Capabilities.HasFlag(FtpCapability.REST);
+
+                    // Delete file if resume is not supported
+                    if (!canResume && File.Exists(temp))
                     {
-                        var buf = new byte[8192];
+                        Log.Write(l.Client, "Temporary file {0} found, but resume not supported. Deleting...", Path.GetFileName(i.CommonPath));
+                        File.Delete(temp);
+                    }
+
+                    using (var file = new StreamWriter(temp, true, System.Text.Encoding.UTF8, bufferSize))
+                    using (var rem = _ftpc.OpenRead(i.CommonPath, file.BaseStream.Position))
+                    {
+                        file.AutoFlush = true;
+                        if (file.BaseStream.Position > 0)
+                        {
+                            Log.Write(l.Client, "Resuming download for file {0} at position {1}", Path.GetFileName(i.CommonPath), file.BaseStream.Position);
+                        }
+
+                        var buf = new byte[bufferSize];
                         int read;
 
                         while ((read = rem.Read(buf, 0, buf.Length)) > 0)
                         {
-                            file.Write(buf, 0, read);
+                            file.BaseStream.Write(buf, 0, read);
                             transfered += read;
 
                             ReportTransferProgress(new TransferProgressArgs(read, transfered, i, startedOn));
@@ -459,7 +476,17 @@ namespace FTPboxLib
             catch (Exception ex)
             {
                 Common.LogError(ex);
-                if (FTP) CheckWorkingDirectory();
+                if (FTP)
+                {
+                    CheckWorkingDirectory();
+
+                    // Don't delete if timeout and resume is supported
+                    if (ex as System.TimeoutException != null &&
+                        _ftpc.Capabilities.HasFlag(FtpCapability.REST))
+                    {
+                        goto Return;
+                    }
+                }
                 goto Finish;
             }
 
@@ -486,6 +513,7 @@ namespace FTPboxLib
                 FileIO.FileSystem.DeleteFile(temp, FileIO.UIOption.OnlyErrorDialogs,
                     FileIO.RecycleOption.SendToRecycleBin);
 #endif
+            Return:
             return TransferStatus.Failure;
         }
 

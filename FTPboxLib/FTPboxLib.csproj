@@ -31,6 +31,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="FluentFTP">
+      <HintPath>.\FluentFTP.dll</HintPath>
+    </Reference>
     <Reference Include="Ionic.Zip.Reduced">
       <HintPath>.\Ionic.Zip.Reduced.dll</HintPath>
     </Reference>
@@ -43,10 +46,6 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Net.FtpClient, Version=1.0.5064.19175, Culture=neutral, PublicKeyToken=fa4be07daa57c2b7, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>.\System.Net.FtpClient.dll</HintPath>
-    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml" />
   </ItemGroup>
