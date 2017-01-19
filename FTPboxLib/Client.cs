@@ -440,13 +440,14 @@ namespace FTPboxLib
                         File.Delete(temp);
                     }
 
-                    using (var file = new StreamWriter(temp, true, System.Text.Encoding.UTF8, bufferSize))
+                    using (var file = new StreamWriter(temp, true, new System.Text.UTF8Encoding(false, true), bufferSize))
                     using (var rem = _ftpc.OpenRead(i.CommonPath, file.BaseStream.Position))
                     {
                         file.AutoFlush = true;
                         if (file.BaseStream.Position > 0)
                         {
-                            Log.Write(l.Client, "Resuming download for file {0} at position {1}", Path.GetFileName(i.CommonPath), file.BaseStream.Position);
+                            var fileInfo = new FileInfo(temp);
+                            Log.Write(l.Client, "Resuming download for file {0} at position {1}({2})", Path.GetFileName(i.CommonPath), file.BaseStream.Position, fileInfo.Length);
                         }
 
                         var buf = new byte[bufferSize];
@@ -490,7 +491,8 @@ namespace FTPboxLib
                 goto Finish;
             }
 
-            if (i.Item.Size == new FileInfo(temp).Length)
+            var tempFileInfo = new FileInfo(temp);
+            if (i.Item.Size == tempFileInfo.Length)
             {
                 _controller.FolderWatcher.Pause(); // Pause Watchers
                 if (File.Exists(i.LocalPath))
@@ -503,6 +505,10 @@ namespace FTPboxLib
                 File.Move(temp, i.LocalPath);
                 _controller.FolderWatcher.Resume(); // Resume Watchers
                 return TransferStatus.Success;
+            }
+            else
+            {
+                Log.Write(l.Client, "[Error] Size mismatch! {0}({1}) <> {2}({3}), deleting temp file...", i.Item.Name, i.Item.Size, tempFileInfo.Name, tempFileInfo.Length);
             }
 
             Finish:
